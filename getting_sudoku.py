@@ -11,9 +11,13 @@ from skimage.filters import threshold_otsu
 
 sudoku=[]
 
-model=joblib.load('Sudoku_Solver\models\svc\svc.pkl')
+position=[]
+
+model=joblib.load('Sudoku_Solver\models\svc\svm_mnist_model.pkl')
 
 image=imread('Sudoku_Solver/Sudoku_photos/Example1.png', as_gray=True)
+
+height, width = image.shape[:2] 
 
 fig, (x,y,z) = plt.subplots(1,3)
 
@@ -23,7 +27,7 @@ labeled_image = measure.label(image)
 
 regionprop = regionprops(labeled_image)
 
-sorted_prop = sorted(regionprop, key=lambda x: (x.centroid[0], x.centroid[1]))
+sorted_prop = sorted(regionprop, key=lambda x: (int(x.centroid[0]), x.centroid[1]))
 
 threshold_value = 0.95
 i=0
@@ -40,25 +44,29 @@ for region in sorted_prop:
 
     number = image[minRow:maxRow, minCol:maxCol]
     
+    height_sqaure = height//9.0
+    position_x= region.centroid[0] //height_sqaure
 
+    position_y = region.centroid[1] // height_sqaure
         # Ridimensiona l'immagine
-    resized_image = resize(number, (20,20), anti_aliasing=True)
+    resized_image = resize(number, (28,28), anti_aliasing=True)
 
-
+    binary_image = resized_image < threshold_otsu(resized_image)    
     i=i+1
-    if i==1:
-        y.imshow(resized_image, cmap='gray')
-
     if i==2:
+        y.imshow(binary_image, cmap='gray')
+
+    if i==4:
         z.imshow(resized_image, cmap='gray')
 
-    binary_image = resized_image < threshold_otsu(resized_image)
+    
     
     binary_image = binary_image.reshape(1,-1)
     number = model.predict(binary_image)
-    sudoku.append(number)
+    
 
+    sudoku.append(number[0])
+    position.append((position_x,position_y))
 plt.show()
 print(sudoku)
-
 
